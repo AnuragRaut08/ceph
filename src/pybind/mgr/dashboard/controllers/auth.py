@@ -83,6 +83,13 @@ class Auth(RESTController, ControllerAuthMixin):
                 # For backward-compatibility: PyJWT versions < 2.0.0 return bytes.
                 token = token.decode('utf-8') if isinstance(token, bytes) else token
 
+                # Record login for UI metrics
+                try:
+                    from .ui_metrics import record_login
+                    record_login()
+                except Exception:  # pylint: disable=broad-except
+                    pass  # Never let telemetry break auth
+
                 self._set_token_cookie(url_prefix, token)
                 if isinstance(Settings.MULTICLUSTER_CONFIG, str):
                     try:

@@ -272,6 +272,8 @@ class Prometheus(PrometheusRESTController):
 class PrometheusNotifications(RESTController):
 
     def list(self, **params):
+        from .ui_metrics import increment_page_visit
+        increment_page_visit('alerts')
         if 'from' in params:
             f = params['from']
             if f == 'last':

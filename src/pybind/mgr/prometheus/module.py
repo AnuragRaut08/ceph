@@ -1999,6 +1999,74 @@ class Module(MgrModule, OrchestratorClientMixin):
         except Exception as e:
             self.log.error(f"Failed to get SMB metadata: {str(e)}")
 
+    def get_dashboard_ui_metrics(self) -> None:
+        """
+        Collect Dashboard UI usage metrics from the shared mgr KV store
+        (written by dashboard/controllers/ui_metrics.py) and expose them
+        as native Prometheus metrics at :9283/metrics.
+        """
+        import json as _json
+
+        known_pages = [
+            'overview', 'pools', 'hosts', 'block-images',
+            'filesystem', 'object-users', 'object-buckets', 'alerts',
+        ]
+
+        # -- Page visits gauge --
+        self.metrics['dashboard_page_visits'] = Metric(
+            'gauge',
+            'ceph_dashboard_page_visits_total',
+            'Total number of visits to each Dashboard page',
+            ('page',)
+        )
+
+        for page in known_pages:
+            raw = self.get_store('ui_metrics/page_visits/' + page)
+            count = int(raw) if raw else 0
+            self.metrics['dashboard_page_visits'].set(count, (page,))
+
+        # -- Login count gauge --
+        self.metrics['dashboard_login_count'] = Metric(
+            'gauge',
+            'ceph_dashboard_login_total',
+            'Total number of Dashboard login events',
+        )
+        raw_login = self.get_store('ui_metrics/sessions/login_count')
+        self.metrics['dashboard_login_count'].set(
+            int(raw_login) if raw_login else 0
+        )
+
+        # -- Last login timestamp gauge --
+        self.metrics['dashboard_last_login'] = Metric(
+            'gauge',
+            'ceph_dashboard_last_login_timestamp_seconds',
+            'Unix timestamp of the most recent Dashboard login',
+        )
+        raw_ts = self.get_store('ui_metrics/sessions/last_login_epoch')
+        self.metrics['dashboard_last_login'].set(
+            int(raw_ts) if raw_ts else 0
+        )
+
+        # -- Protocol enabled gauges --
+        self.metrics['dashboard_protocol_enabled'] = Metric(
+            'gauge',
+            'ceph_dashboard_protocol_enabled',
+            '1 if the storage protocol is active (detected via pool application tags)',
+            ('protocol',)
+        )
+
+        raw_prot = self.get_store('ui_metrics/protocols_enabled')
+        if raw_prot:
+            try:
+                protocols = _json.loads(raw_prot)
+                for proto in ('block', 'file', 'object'):
+                    self.metrics['dashboard_protocol_enabled'].set(
+                        1 if protocols.get(proto) else 0,
+                        (proto,)
+                    )
+            except Exception:  # pylint: disable=broad-except
+                pass
+
     @profile_method(True)
     def collect(self) -> str:
         # Clear the metrics before scraping
@@ -2025,6 +2093,7 @@ class Module(MgrModule, OrchestratorClientMixin):
             self.get_perf_counters()
         self.get_rbd_stats()
 
+        self.get_dashboard_ui_metrics()
         self.get_collect_time_metrics()
 
         # Return formatted metrics and clear no longer used data

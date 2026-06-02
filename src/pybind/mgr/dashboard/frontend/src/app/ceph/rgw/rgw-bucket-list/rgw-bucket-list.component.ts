@@ -5,6 +5,7 @@ import { forkJoin as observableForkJoin, Observable, Subscriber, Subscription } 
 import { switchMap } from 'rxjs/operators';
 
 import { RgwBucketService } from '~/app/shared/api/rgw-bucket.service';
+import { TelemetryService } from '~/app/shared/api/telemetry.service';
 import { ListWithDetails } from '~/app/shared/classes/list-with-details.class';
 import { DeleteConfirmationModalComponent } from '~/app/shared/components/delete-confirmation-modal/delete-confirmation-modal.component';
 import { ActionLabelsI18n } from '~/app/shared/constants/app.constants';
@@ -62,13 +63,20 @@ export class RgwBucketListComponent extends ListWithDetails implements OnInit, O
     private urlBuilder: URLBuilderService,
     public actionLabels: ActionLabelsI18n,
     protected ngZone: NgZone,
-    private taskWrapper: TaskWrapperService
+    private taskWrapper: TaskWrapperService,
+    private telemetryService: TelemetryService
   ) {
     super(ngZone);
   }
 
   ngOnInit() {
     this.permission = this.authStorageService.getPermissions().rgw;
+    
+    // Track page visit for telemetry
+    this.telemetryService.trackEvent('rgw.bucket_list').subscribe({
+      next: () => {},
+      error: (err) => console.warn('Telemetry tracking failed:', err)
+    });
     this.columns = [
       {
         name: $localize`Name`,

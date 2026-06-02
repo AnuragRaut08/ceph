@@ -148,6 +148,8 @@ class Pool(RESTController):
                  },
                  responses={200: POOL_SCHEMA})
     def list(self, attrs=None, stats=False):
+        from .ui_metrics import increment_page_visit
+        increment_page_visit('pools')
         return self._pool_list(attrs, stats)
 
     @classmethod

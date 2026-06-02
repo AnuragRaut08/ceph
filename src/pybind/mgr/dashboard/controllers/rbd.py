@@ -118,6 +118,8 @@ class Rbd(RESTController):
     @RESTController.MethodMap(version=APIVersion(2, 0))  # type: ignore
     def list(self, pool_name=None, offset: int = 0, limit: int = DEFAULT_LIMIT,
              search: str = '', sort: str = ''):
+        from .ui_metrics import increment_page_visit
+        increment_page_visit('block-images')
         return self._rbd_list(pool_name, offset=int(offset), limit=int(limit),
                               search=search, sort=sort)
 

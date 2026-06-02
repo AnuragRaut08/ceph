@@ -76,6 +76,8 @@ class CephFS(RESTController):
         self.cephfs_clients = {}
 
     def list(self):
+        from .ui_metrics import increment_page_visit
+        increment_page_visit('filesystem')
         return CephFS_.list_filesystems(all_info=True)
 
     def create(

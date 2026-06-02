@@ -610,6 +610,8 @@ class RgwBucket(RgwRESTController):
     @RESTController.MethodMap(version=APIVersion(1, 1))  # type: ignore
     def list(self, stats: bool = False, daemon_name: Optional[str] = None,
              uid: Optional[str] = None) -> List[Union[str, Dict[str, Any]]]:
+        from .ui_metrics import increment_page_visit
+        increment_page_visit('object-buckets')
         query_params = f'?stats={str_to_bool(stats)}'
         if uid and uid.strip():
             query_params = f'{query_params}&uid={uid.strip()}'
@@ -929,6 +931,8 @@ class RgwUser(RgwRESTController):
                  },
                  responses={200: RGW_USER_SCHEMA})
     def list(self, daemon_name=None, detailed: bool = False):
+        from .ui_metrics import increment_page_visit
+        increment_page_visit('object-users')
         detailed = str_to_bool(detailed)
         users = []  # type: List[Union[str, Dict[str, Any]]]
         marker = None

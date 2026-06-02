@@ -275,6 +275,8 @@ class Host(RESTController):
     def list(self, sources=None, facts=False, offset: int = 0,
              limit: int = 5, search: str = '', sort: str = '',
              include_service_instances=True):
+        from .ui_metrics import increment_page_visit
+        increment_page_visit('hosts')
         hosts = get_hosts(sources)
         params = ['hostname']
         paginator = ListPaginator(int(offset), int(limit), sort, search, hosts,

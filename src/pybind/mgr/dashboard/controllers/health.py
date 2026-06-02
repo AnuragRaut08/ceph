@@ -352,6 +352,8 @@ class Health(BaseController):
     @Endpoint()
     @EndpointDoc("Get Cluster's detailed health report")
     def full(self):
+        from .ui_metrics import increment_page_visit
+        increment_page_visit('overview')
         return self.health_full.all_health()
 
     @Endpoint()
